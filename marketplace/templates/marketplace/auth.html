@@ -1,0 +1,32 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}{{ role_label }} {% if signup %}sign up{% else %}login{% endif %} | KaziLink{% endblock %}
+{% block content %}
+<section class="wrap page form-layout">
+  <div>
+    <p class="eyebrow"><span aria-hidden="true"></span> {{ role_label }} account</p>
+    <h1>{% if signup %}Create your account{% else %}Welcome back{% endif %}</h1>
+    {% if signup %}
+      {% if role == 'freelancer' %}
+        <p class="intro">Tell us what you do, where you work, and whether you’re available.</p>
+      {% else %}
+        <p class="intro">Have your KaziLink-issued requirement ID handy. You’ll need it to create a hirer account.</p>
+      {% endif %}
+      <p>Already registered?
+        {% if role == 'freelancer' %}<a href="{% url 'login_freelancer' %}">Log in</a>{% else %}<a href="{% url 'login_hirer' %}">Log in</a>{% endif %}
+      </p>
+      <p><a href="{% url 'signup' %}">Change account type</a></p>
+    {% else %}
+      <p class="intro">Log in with your {{ role_label|lower }} username and password.</p>
+      <p>New to KaziLink?
+        {% if role == 'freelancer' %}<a href="{% url 'signup_freelancer' %}">Create an account</a>{% else %}<a href="{% url 'signup_hirer' %}">Create an account</a>{% endif %}
+      </p>
+      <p><a href="{% url 'login' %}">Change account type</a></p>
+    {% endif %}
+  </div>
+  <form class="panel form-panel" method="post">
+    {% include 'marketplace/fields.html' %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <button class="button" type="submit">{% if signup %}Create account{% else %}Log in{% endif %}</button>
+  </form>
+</section>
+{% endblock %}

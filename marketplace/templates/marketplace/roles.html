@@ -1,0 +1,23 @@
+{% extends 'marketplace/base.html' %}
+{% block title %}{% if action == 'signup' %}Create an account{% else %}Log in{% endif %} | KaziLink{% endblock %}
+{% block content %}
+<section class="wrap page">
+  <p class="eyebrow"><span aria-hidden="true"></span> KaziLink accounts</p>
+  <h1>{% if action == 'signup' %}Create an account{% else %}Log in{% endif %}</h1>
+  <p class="intro">Choose your account type.</p>
+  <div class="cards">
+    <article class="panel">
+      <h2>Freelancer</h2>
+      <p>Set up your profile with your skills and availability for local work.</p>
+      {% if action == 'signup' %}<a class="button" href="{% url 'signup_freelancer' %}">Freelancer sign up</a>
+      {% else %}<a class="button" href="{% url 'login_freelancer' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Freelancer login</a>{% endif %}
+    </article>
+    <article class="panel">
+      <h2>Hirer</h2>
+      <p>Post jobs and keep track of the listings you create.</p>
+      {% if action == 'signup' %}<a class="button outline" href="{% url 'signup_hirer' %}">Hirer sign up</a>
+      {% else %}<a class="button outline" href="{% url 'login_hirer' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Hirer login</a>{% endif %}
+    </article>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="KaziLink connects local freelancers and hirers in Kenya.">
+  <title>{% block title %}KaziLink | Local work, closer to home{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'marketplace/site.css' %}">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true">K</span>KaziLink<span class="brand-period">.</span></a>
+      <nav aria-label="Main navigation">
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'dashboard' %}">Dashboard</a>
+          <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="button outline">Log out</button></form>
+        {% else %}
+          <a href="{% url 'login' %}">Log in</a>
+          <a class="button compact" href="{% url 'signup' %}">Get started</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+  <main id="main">{% block content %}{% endblock %}</main>
+  <footer class="site-footer"><div class="wrap">KaziLink <span>·</span> Local work in Kenya</div></footer>
+</body>
+</html>

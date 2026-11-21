@@ -1,0 +1,30 @@
+{% extends 'marketplace/base.html' %}
+{% load static %}
+{% block content %}
+<section class="wrap hero">
+  <div class="hero-copy">
+    <p class="eyebrow"><span aria-hidden="true"></span> Local work in Kenya</p>
+    <h1>Good work.<br><em>Closer to home.</em></h1>
+    <p class="intro">KaziLink connects skilled freelancers with people who need a job done nearby. From carpentry to event support, find the right people for work in your neighbourhood.</p>
+    <div class="actions">
+      {% if request.user.is_authenticated %}
+        <a class="button" href="{% url 'dashboard' %}">Go to dashboard</a>
+      {% else %}
+        <a class="button" href="{% url 'signup_freelancer' %}">Join as a freelancer</a>
+        <a class="button outline" href="{% url 'signup_hirer' %}">Join as a hirer</a>
+      {% endif %}
+    </div>
+  </div>
+  <figure class="hero-photo">
+    <img src="{% static 'marketplace/carpenter.jpg' %}" alt="Carpenter measuring timber at a workshop bench" fetchpriority="high">
+    <figcaption><span aria-hidden="true"></span> Carpentry <span class="caption-divider" aria-hidden="true"></span> Nairobi, Kenya</figcaption>
+  </figure>
+</section>
+<section class="role-band" aria-labelledby="roles-title">
+  <div class="wrap band-grid">
+    <h2 id="roles-title">How KaziLink works</h2>
+    <div><h3>For freelancers</h3><p>Register with your skills, neighbourhood, availability, and a National ID or passport number.</p></div>
+    <div><h3>For hirers</h3><p>Use a KaziLink-issued ID to register, then post a job with the location, pay, duration, and requirements.</p></div>
+  </div>
+</section>
+{% endblock %}
