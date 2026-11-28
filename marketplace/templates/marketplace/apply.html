@@ -1,0 +1,16 @@
+{% extends 'marketplace/base.html' %}
+{% block previous_destination %}{% url 'job_detail' job.pk %}{% endblock %}
+{% block title %}Apply for {{ job.title }} | KaziLink{% endblock %}
+{% block content %}
+<section class="wrap page form-layout">
+  <div>
+    <p class="eyebrow"><i class="kenya-stripe" aria-hidden="true"></i> Job application</p>
+    <h1>{{ job.title }}</h1>
+    <p class="intro">Send your résumé to {{ job.hirer.get_full_name|default:job.hirer.username }}. Your name, profile details, and email will be visible to this hirer.</p>
+  </div>
+  <form class="panel form-panel" method="post" enctype="multipart/form-data">
+    {% include 'marketplace/fields.html' %}
+    <button class="button" type="submit">Send application</button>
+  </form>
+</section>
+{% endblock %}

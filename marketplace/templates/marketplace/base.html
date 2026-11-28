@@ -3,28 +3,45 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="KaziLink connects local freelancers and hirers in Kenya.">
   <title>{% block title %}KaziLink | Local work, closer to home{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'marketplace/site.css' %}">
+  <link rel="stylesheet" href="{% static 'marketplace/site.css' %}?v=glass-7">
+  <script src="{% static 'marketplace/navigation.js' %}" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="wrap header-inner">
-      <a class="brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true">K</span>KaziLink<span class="brand-period">.</span></a>
+      <a class="brand" href="{% url 'home' %}" aria-label="KaziLink home"><span class="brand-mark" aria-hidden="true">K</span>KaziLink<span class="brand-period">.</span></a>
       <nav aria-label="Main navigation">
         {% if request.user.is_authenticated %}
-          <a href="{% url 'dashboard' %}">Dashboard</a>
-          <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="button outline">Log out</button></form>
+          <a class="button outline nav-button" href="{% url 'dashboard' %}"{% if request.resolver_match.url_name == 'dashboard' %} aria-current="page"{% endif %}><span class="nav-icon nav-icon-grid" aria-hidden="true"></span>Dashboard</a>
+          <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="button outline nav-button"><span class="nav-icon nav-icon-exit" aria-hidden="true"></span>Log out</button></form>
         {% else %}
-          <a href="{% url 'login' %}">Log in</a>
-          <a class="button compact" href="{% url 'signup' %}">Get started</a>
+          <a class="button outline nav-button" href="{% url 'login' %}"><span class="nav-icon nav-icon-enter" aria-hidden="true"></span>Log in</a>
+          <a class="button nav-button" href="{% url 'signup' %}"><span class="nav-icon nav-icon-add" aria-hidden="true"></span>Get started</a>
         {% endif %}
       </nav>
     </div>
   </header>
-  <main id="main">{% block content %}{% endblock %}</main>
-  <footer class="site-footer"><div class="wrap">KaziLink <span>·</span> Local work in Kenya</div></footer>
+  <main id="main">
+    {% with current_page=request.resolver_match.url_name %}
+      <div class="wrap page-navigation" data-page-navigation{% if current_page == 'home' %} hidden{% endif %}>
+        <a class="button outline previous-page" data-previous-page data-signed-in="{{ request.user.is_authenticated|yesno:'true,false' }}" href="{% block previous_destination %}{% if request.user.is_authenticated and current_page != 'dashboard' %}{% url 'dashboard' %}{% else %}{% url 'home' %}{% endif %}{% endblock %}"><span class="previous-icon" aria-hidden="true"></span>Previous page</a>
+      </div>
+    {% endwith %}
+    {% if messages %}
+      <div class="wrap messages">
+        {% for message in messages %}
+          <p class="notice {% if message.level_tag == 'success' %}feedback-success{% elif message.level_tag == 'error' %}feedback-error{% endif %}" role="{% if message.level_tag == 'error' %}alert{% else %}status{% endif %}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner"><strong>KaziLink.</strong><span><i class="kenya-stripe" aria-hidden="true"></i> Built around local work in Kenya</span></div>
+  </footer>
 </body>
 </html>

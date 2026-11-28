@@ -1,34 +1,97 @@
 {% extends 'marketplace/base.html' %}
 {% block title %}Dashboard | KaziLink{% endblock %}
 {% block content %}
-<section class="wrap page">
-  <p class="eyebrow"><span aria-hidden="true"></span> {% if request.user.role %}{{ request.user.get_role_display }} dashboard{% else %}Dashboard{% endif %}</p>
-  <h1>Welcome, {{ request.user.first_name|default:request.user.username }}</h1>
-  {% if profile %}
-    <article class="panel profile">
-      <h2>Your freelancer profile</h2>
-      <dl class="details">
-        <div><dt>Neighbourhood</dt><dd>{{ request.user.location }}</dd></div>
-        <div><dt>Skills</dt><dd>{{ profile.skills }}</dd></div>
-        <div><dt>Availability</dt><dd>{{ profile.available|yesno:"Available,Unavailable" }}</dd></div>
-        <div><dt>Identification</dt><dd>{{ profile.get_document_type_display }} submitted</dd></div>
-      </dl>
-    </article>
-  {% elif request.user.role == 'hirer' %}
-    <div class="section-heading"><h2>Your job posts</h2><a class="button" href="{% url 'create_job' %}">Post a job</a></div>
-    <div class="cards">
-      {% for job in jobs %}
-        <article class="panel job">
-          <h3>{{ job.title }}</h3>
-          <p class="job-meta">{{ job.location }} · {{ job.duration }} · KES {{ job.pay }}</p>
-          <p>{{ job.description|linebreaksbr }}</p>
-          <h4>Requirements and what to expect</h4>
-          <p>{{ job.expectations|linebreaksbr }}</p>
-        </article>
-      {% empty %}
-        <div class="panel"><p>Your job posts will appear here.</p></div>
-      {% endfor %}
+<section class="wrap workspace">
+  <header class="workspace-header">
+    <div>
+      <p class="eyebrow"><i class="kenya-stripe" aria-hidden="true"></i> {% if request.user.role %}{{ request.user.get_role_display }} workspace{% else %}Dashboard{% endif %}</p>
+      <h1>Welcome, {{ request.user.first_name|default:request.user.username }}</h1>
+      {% if request.user.location %}<p class="muted">{{ request.user.location }}</p>{% endif %}
     </div>
-  {% endif %}
+    <div class="actions">
+      <a class="button outline" href="{% url 'password_change' %}">Change password</a>
+      {% if request.user.role == 'hirer' %}<a class="button" href="{% url 'create_job' %}">Post a job</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="workspace-grid">
+    {% if request.user.role %}
+      <section class="panel job-board" aria-labelledby="job-heading">
+        <div class="section-heading"><h2 id="job-heading">Job listings</h2></div>
+        {% if can_view_jobs %}
+          <form class="search" method="get" role="search" aria-label="Search jobs">
+            <label class="sr-only" for="job-search">Search by title, skill or location</label>
+            <input id="job-search" type="search" enterkeyhint="search" name="q" value="{{ search_query }}" maxlength="100" placeholder="Search by title, skill or location">
+            <button class="button" type="submit">Search</button>
+            {% if search_query %}<a class="button outline" href="{% url 'dashboard' %}">Clear</a>{% endif %}
+          </form>
+          <p class="help">Opening a listing shares your name with the hirer.</p>
+          <div class="listing-stack">
+            {% for job in jobs %}
+              <a class="listing" href="{% url 'job_detail' job.pk %}">
+                <div class="listing-top">
+                  <div><h3>{{ job.title }}</h3><p>{{ job.hirer.get_full_name|default:job.hirer.username }}</p></div>
+                  <span class="tag">KES {{ job.pay }}</span>
+                </div>
+                <p class="muted">{{ job.location }} · {{ job.duration }}</p>
+                {% if job.hirer_id == request.user.pk %}<span class="tag subtle">Your post</span>{% endif %}
+              </a>
+            {% empty %}
+              <p class="empty">{% if search_query %}No jobs match your search.{% else %}No jobs have been posted yet.{% endif %}</p>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p>Your account does not have permission to view job listings.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if request.user.role == 'hirer' %}
+      <aside class="panel" aria-labelledby="posted-heading">
+        <h2 id="posted-heading">Your postings</h2>
+        <div class="listing-stack">
+          {% for job in posted_jobs %}
+            <a class="listing small" href="{% url 'job_review' job.pk %}">
+              <h3>{{ job.title }}</h3>
+              <p class="muted">{{ job.viewer_count }} viewer{{ job.viewer_count|pluralize }} · {{ job.applicant_count }} applicant{{ job.applicant_count|pluralize }}</p>
+              <span class="tag subtle">{% if job.closed_at %}Closed{% else %}Review posting{% endif %}</span>
+            </a>
+          {% empty %}
+            <p class="empty">Your postings will appear here.</p>
+          {% endfor %}
+        </div>
+      </aside>
+    {% elif request.user.role == 'freelancer' %}
+      <aside class="side-stack">
+        <section class="panel" aria-labelledby="application-heading">
+          <div class="section-heading">
+            <h2 id="application-heading">Your applications</h2>
+            {% if invitation_count %}<span class="tag">{{ invitation_count }} to reply</span>{% endif %}
+          </div>
+          <div class="listing-stack">
+            {% for application in applications %}
+              <a class="listing small" href="{% url 'application_status' application.pk %}">
+                <h3>{{ application.job.title }}</h3>
+                <p class="muted">{{ application.job.hirer.get_full_name|default:application.job.hirer.username }}</p>
+                <span class="tag subtle{% if application.status == 'invited' or application.status == 'accepted' %} feedback-success{% endif %}">{% if application.job.closed_at and application.status == 'submitted' %}Listing closed{% else %}{{ application.get_status_display }}{% endif %}</span>
+              </a>
+            {% empty %}
+              <p class="empty">Applications and hirer invitations will appear here.</p>
+            {% endfor %}
+          </div>
+        </section>
+        {% if profile %}
+          <section class="panel" aria-labelledby="profile-heading">
+            <h2 id="profile-heading">Your profile</h2>
+            <dl class="details">
+              <div><dt>Skills</dt><dd>{{ profile.skills }}</dd></div>
+              <div><dt>Availability</dt><dd>{{ profile.available|yesno:"Available,Unavailable" }}</dd></div>
+              <div><dt>Identification</dt><dd>{{ profile.get_document_type_display }} submitted</dd></div>
+            </dl>
+          </section>
+        {% endif %}
+      </aside>
+    {% endif %}
+  </div>
 </section>
 {% endblock %}

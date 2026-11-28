@@ -1,0 +1,37 @@
+{% extends 'marketplace/base.html' %}
+{% block previous_destination %}{% url 'dashboard' %}{% endblock %}
+{% block title %}Your application | KaziLink{% endblock %}
+{% block content %}
+<section class="wrap page">
+  <div class="detail-grid">
+    <article class="panel detail-panel">
+      <p class="eyebrow"><i class="kenya-stripe" aria-hidden="true"></i> Your application</p>
+      <h1>{{ application.job.title }}</h1>
+      <p class="intro">Hiring · {{ application.job.hirer.get_full_name|default:application.job.hirer.username }}</p>
+      {% if application.note %}<h2>Your note</h2><div class="prose">{{ application.note|linebreaks }}</div>{% endif %}
+      <div class="actions">
+        {% if not application.job.closed_at %}<a class="button outline" href="{% url 'job_detail' application.job_id %}">View job details</a>{% endif %}
+        <a class="button outline" href="{% url 'download_resume' application.pk %}">Download your résumé</a>
+      </div>
+    </article>
+    <section class="panel">
+      <h2>Application status</h2>
+      {% if application.status == 'invited' %}
+        <p class="notice feedback-success">The hirer wishes to proceed with your application.</p>
+      {% elif application.status == 'accepted' %}
+        <p class="notice feedback-success">{{ application.get_status_display }}</p>
+      {% else %}
+        <p>{% if application.job.closed_at and application.status == 'submitted' %}Listing closed{% else %}{{ application.get_status_display }}{% endif %}</p>
+      {% endif %}
+      {% include 'marketplace/interview.html' %}
+      {% if application.status == 'invited' %}
+        <form class="actions top-gap" action="{% url 'respond_to_invitation' application.pk %}" method="post">
+          {% csrf_token %}
+          <button class="button" name="reply" value="accept" type="submit">Accept invitation</button>
+          <button class="button outline" name="reply" value="decline" type="submit">Decline</button>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endblock %}

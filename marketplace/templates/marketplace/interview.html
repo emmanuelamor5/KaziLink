@@ -1,0 +1,9 @@
+{% if application.invitation_note %}
+  <h3>Message from the hirer</h3>
+  <div class="prose">{{ application.invitation_note|linebreaks }}</div>
+{% endif %}
+{% if application.interview_at or application.interview_details %}
+  <h3>Interview</h3>
+  {% if application.interview_at %}<p><time datetime="{{ application.interview_at|date:'c' }}">{{ application.interview_at|date:"D, j M Y, H:i" }} EAT</time></p>{% endif %}
+  {% if application.interview_details %}<p>{{ application.interview_details }}</p>{% endif %}
+{% endif %}

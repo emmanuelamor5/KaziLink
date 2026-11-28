@@ -1,10 +1,12 @@
 {% extends 'marketplace/base.html' %}
+{% load static %}
+{% block previous_destination %}{% if signup %}{% url 'signup' %}{% else %}{% url 'login' %}{% if next %}?next={{ next|urlencode:'' }}{% endif %}{% endif %}{% endblock %}
 {% block title %}{{ role_label }} {% if signup %}sign up{% else %}login{% endif %} | KaziLink{% endblock %}
 {% block content %}
 <section class="wrap page form-layout">
-  <div>
-    <p class="eyebrow"><span aria-hidden="true"></span> {{ role_label }} account</p>
-    <h1>{% if signup %}Create your account{% else %}Welcome back{% endif %}</h1>
+  <div class="auth-copy">
+    <p class="eyebrow"><i class="kenya-stripe" aria-hidden="true"></i> {{ role_label }} account</p>
+    <h1>{% if signup %}Create your account{% else %}Karibu tena<span class="brand-period">.</span>{% endif %}</h1>
     {% if signup %}
       {% if role == 'freelancer' %}
         <p class="intro">Tell us what you do, where you work, and whether you’re available.</p>
@@ -20,13 +22,33 @@
       <p>New to KaziLink?
         {% if role == 'freelancer' %}<a href="{% url 'signup_freelancer' %}">Create an account</a>{% else %}<a href="{% url 'signup_hirer' %}">Create an account</a>{% endif %}
       </p>
-      <p><a href="{% url 'login' %}">Change account type</a></p>
+      <p><a href="{% url 'login' %}{% if next %}?next={{ next|urlencode:'' }}{% endif %}">Change account type</a></p>
     {% endif %}
   </div>
-  <form class="panel form-panel" method="post">
-    {% include 'marketplace/fields.html' %}
-    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-    <button class="button" type="submit">{% if signup %}Create account{% else %}Log in{% endif %}</button>
+  <form class="panel form-panel" method="post"{% if signup %} data-signup-form{% endif %}>
+    {% if signup %}
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="signup-progress" data-signup-progress hidden>
+        <p data-signup-count></p>
+        <progress aria-hidden="true" max="{{ signup_steps|length }}" value="1"></progress>
+      </div>
+      {% for title, fields in signup_steps %}
+        <fieldset class="signup-step" data-signup-step>
+          <legend tabindex="-1">{{ title }}</legend>
+          {% for field in fields %}{% include 'marketplace/field.html' %}{% endfor %}
+        </fieldset>
+      {% endfor %}
+      <div class="signup-actions">
+        <button class="button outline" data-signup-back type="button" hidden>Previous step</button>
+        <button class="button" data-signup-next type="submit">Create account</button>
+      </div>
+    {% else %}
+      {% include 'marketplace/fields.html' %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+      <button class="button" type="submit">Log in</button>
+    {% endif %}
   </form>
 </section>
+{% if signup %}<script src="{% static 'marketplace/signup.js' %}" defer></script>{% endif %}
 {% endblock %}

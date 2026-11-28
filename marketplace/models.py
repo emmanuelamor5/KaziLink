@@ -50,9 +50,54 @@ class Job(models.Model):
     )
     expectations = models.TextField(max_length=1000)
     posted_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True, blank=True, editable=False)
 
     class Meta:
         ordering = ["-posted_at", "-pk"]
 
     def __str__(self):
         return self.title
+
+
+class JobView(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="views")
+    viewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-viewed_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["job", "viewer"], name="one_view_per_job_and_user"),
+        ]
+
+
+class JobApplication(models.Model):
+    class Status(models.TextChoices):
+        SUBMITTED = "submitted", "Submitted"
+        INVITED = "invited", "Hirer wishes to proceed"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="applications")
+    freelancer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="job_applications",
+    )
+    note = models.TextField(max_length=1500, blank=True)
+    resume_pdf = models.BinaryField()
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.SUBMITTED)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    invitation_note = models.TextField(max_length=1500, blank=True)
+    interview_at = models.DateTimeField(null=True, blank=True)
+    interview_details = models.CharField(max_length=350, blank=True)
+
+    class Meta:
+        ordering = ["-submitted_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "freelancer"], name="one_application_per_job_and_freelancer",
+            ),
+            models.UniqueConstraint(
+                fields=["job"], condition=models.Q(status__in=["invited", "accepted"]),
+                name="one_active_candidate_per_job",
+            ),
+        ]

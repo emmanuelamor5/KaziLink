@@ -3,11 +3,19 @@ import re
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.core.validators import FileExtensionValidator
+from django.utils import timezone
 
 from .models import FreelancerProfile, HirerAccessCode, Job, User
 
 
 class RoleLoginForm(AuthenticationForm):
+    remember_me = forms.BooleanField(
+        required=False,
+        label="Keep me signed in",
+        help_text="Select this on a device you trust.",
+    )
+
     def __init__(self, *args, role=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.role = role
@@ -31,6 +39,27 @@ class RegistrationForm(UserCreationForm):
         model = User
         fields = ("first_name", "last_name", "email", "location", "username")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.pop("autofocus", None)
+
+
+class FreelancerDocumentNumberField(forms.CharField):
+    def __init__(self, **kwargs):
+        super().__init__(
+            label="National ID or passport number",
+            max_length=24,
+            widget=forms.PasswordInput(attrs={"autocomplete": "off"}),
+            help_text="Use a fictional number for the class demonstration.",
+            **kwargs,
+        )
+
+    def clean(self, value):
+        number = super().clean(value).upper()
+        if number and not re.fullmatch(r"[A-Z0-9]{5,24}", number):
+            raise forms.ValidationError("Enter 5 to 24 letters or digits.")
+        return number
+
 
 class FreelancerRegistrationForm(RegistrationForm):
     field_order = [
@@ -44,18 +73,7 @@ class FreelancerRegistrationForm(RegistrationForm):
     document_type = forms.ChoiceField(
         choices=[("", "Select document type"), *FreelancerProfile.DocumentType.choices]
     )
-    document_number = forms.CharField(
-        label="National ID or passport number",
-        max_length=24,
-        widget=forms.PasswordInput(attrs={"autocomplete": "off"}),
-        help_text="Use a fictional number for the class demonstration.",
-    )
-
-    def clean_document_number(self):
-        number = self.cleaned_data["document_number"].upper()
-        if not re.fullmatch(r"[A-Z0-9]{5,24}", number):
-            raise forms.ValidationError("Enter 5 to 24 letters or digits.")
-        return number
+    document_number = FreelancerDocumentNumberField()
 
 
 class HirerRegistrationForm(RegistrationForm):
@@ -89,3 +107,48 @@ class JobForm(forms.ModelForm):
             "expectations": forms.Textarea(attrs={"rows": 3}),
             "duration": forms.TextInput(attrs={"placeholder": "e.g. 4 hours"}),
         }
+
+
+class JobApplicationForm(forms.Form):
+    note = forms.CharField(
+        required=False, max_length=1500, label="Note to the hirer",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+    resume = forms.FileField(
+        label="Résumé (PDF)", help_text="Up to 5 MB. Shared privately with the hirer.",
+        validators=[FileExtensionValidator(["pdf"])],
+        widget=forms.ClearableFileInput(attrs={"accept": ".pdf,application/pdf"}),
+    )
+
+    def clean_resume(self):
+        resume = self.cleaned_data["resume"]
+        if resume.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("Choose a PDF no larger than 5 MB.")
+        if resume.read(5) != b"%PDF-":
+            raise forms.ValidationError("Upload a PDF file.")
+        resume.seek(0)
+        return resume
+
+
+class CandidateInvitationForm(forms.Form):
+    invitation_note = forms.CharField(
+        required=False, max_length=1500, label="Message to the candidate",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+    interview_at = forms.DateTimeField(
+        required=False, label="Interview date and time",
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        help_text="Kenya time (EAT). Leave blank to arrange the interview later.",
+    )
+    interview_details = forms.CharField(
+        required=False, max_length=350, label="Interview location or meeting details",
+    )
+
+    def clean(self):
+        data = super().clean()
+        interview_at = data.get("interview_at")
+        if interview_at and interview_at <= timezone.now():
+            self.add_error("interview_at", "Choose a time in the future.")
+        if interview_at and not data.get("interview_details"):
+            self.add_error("interview_details", "Tell the candidate where or how to attend.")
+        return data

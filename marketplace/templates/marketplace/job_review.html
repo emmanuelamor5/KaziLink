@@ -1,0 +1,50 @@
+{% extends 'marketplace/base.html' %}
+{% block previous_destination %}{% url 'dashboard' %}{% endblock %}
+{% block title %}Review {{ job.title }} | KaziLink{% endblock %}
+{% block content %}
+<section class="wrap page">
+  <header class="workspace-header">
+    <div>
+      <p class="eyebrow"><i class="kenya-stripe" aria-hidden="true"></i> Your posting{% if job.closed_at %} · Closed{% endif %}</p>
+      <h1>{{ job.title }}</h1>
+      <p class="muted">{{ job.location }} · {{ job.duration }} · KES {{ job.pay }}</p>
+    </div>
+    <a class="button outline" href="{% url 'job_detail' job.pk %}">View job details</a>
+  </header>
+  {% if accepted and not job.closed_at %}
+    <div class="notice closing-panel feedback-success">
+      <div><strong>{{ accepted.freelancer.get_full_name|default:accepted.freelancer.username }} accepted your invitation.</strong><p>Delete the listing from the job board. You can still access its hiring history here.</p></div>
+      <form method="post" action="{% url 'delete_listing' job.pk %}">
+        {% csrf_token %}
+        <button class="button outline" type="submit">Delete listing</button>
+      </form>
+    </div>
+  {% endif %}
+  <div class="detail-grid">
+    <section class="panel">
+      <div class="section-heading"><h2>Applicants</h2><span class="tag subtle">{{ applicants|length }}</span></div>
+      <div class="listing-stack">
+        {% for application in applicants %}
+          <a class="listing small" href="{% url 'candidate_detail' application.pk %}">
+            <h3>{{ application.freelancer.get_full_name|default:application.freelancer.username }}</h3>
+            <p class="muted">{{ application.submitted_at|date:"j M Y" }}</p>
+            <span class="tag subtle{% if application.status == 'invited' or application.status == 'accepted' %} feedback-success{% endif %}">{{ application.get_status_display }}</span>
+          </a>
+        {% empty %}
+          <p class="empty">No applications yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="panel">
+      <div class="section-heading"><h2>Viewers</h2><span class="tag subtle">{{ viewers|length }}</span></div>
+      <ul class="people-list">
+        {% for entry in viewers %}
+          <li><strong>{{ entry.viewer.get_full_name|default:entry.viewer.username }}</strong><time datetime="{{ entry.viewed_at|date:'c' }}">First opened {{ entry.viewed_at|date:"j M Y, H:i" }}</time></li>
+        {% empty %}
+          <li class="empty">No one has opened this listing yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</section>
+{% endblock %}

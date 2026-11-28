@@ -1,0 +1,50 @@
+{% extends 'marketplace/base.html' %}
+{% block previous_destination %}{% url 'job_review' application.job_id %}{% endblock %}
+{% block title %}{{ candidate.get_full_name|default:candidate.username }} | KaziLink{% endblock %}
+{% block content %}
+<section class="wrap page">
+  <header class="workspace-header">
+    <div>
+      <p class="eyebrow"><i class="kenya-stripe" aria-hidden="true"></i> Candidate profile</p>
+      <h1>{{ candidate.get_full_name|default:candidate.username }}</h1>
+      <p class="muted">Applied for {{ application.job.title }}</p>
+    </div>
+    <span class="tag subtle{% if application.status == 'invited' or application.status == 'accepted' %} feedback-success{% endif %}">{{ application.get_status_display }}</span>
+  </header>
+  <div class="detail-grid">
+    <article class="panel detail-panel">
+      <h2>Profile</h2>
+      <dl class="details">
+        {% if candidate.location %}<div><dt>Neighbourhood</dt><dd>{{ candidate.location }}</dd></div>{% endif %}
+        {% if candidate.freelancer_profile %}
+          <div><dt>Skills</dt><dd>{{ candidate.freelancer_profile.skills }}</dd></div>
+          <div><dt>Availability</dt><dd>{{ candidate.freelancer_profile.available|yesno:"Available,Unavailable" }}</dd></div>
+        {% endif %}
+        {% if candidate.email %}<div><dt>Email</dt><dd>{{ candidate.email }}</dd></div>{% endif %}
+      </dl>
+      {% if application.note %}<h2 class="top-gap">Application note</h2><div class="prose">{{ application.note|linebreaks }}</div>{% endif %}
+      <div class="actions top-gap">
+        <a class="button" href="{% url 'download_resume' application.pk %}">Download résumé</a>
+        {% if candidate.email %}<a class="button outline" href="mailto:{{ candidate.email|urlencode:'@.' }}">Email candidate</a>{% endif %}
+      </div>
+    </article>
+    <section class="panel">
+      {% if can_invite %}
+        <h2>Approve candidate</h2>
+        <p>The freelancer will receive an invitation on their dashboard and can accept or decline it.</p>
+        <form class="form-panel inline-form" method="post">
+          {% include 'marketplace/fields.html' %}
+          <button class="button" type="submit">Approve and notify</button>
+        </form>
+      {% else %}
+        <h2>Application status</h2>
+        <p>{{ application.get_status_display }}</p>
+        {% if application.status == 'submitted' %}
+          <p class="muted">{% if application.job.closed_at %}This listing is closed.{% else %}This listing already has an active invitation or an accepted candidate.{% endif %}</p>
+        {% endif %}
+        {% include 'marketplace/interview.html' %}
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endblock %}
