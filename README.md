@@ -19,7 +19,7 @@ Open [KaziLink on localhost](http://127.0.0.1:8000/). If you already have a virt
 
 1. Register as a freelancer in four steps. Enter contact details, work profile, identification, and login details. Use a fictional document number such as `DEMO12345`. The dashboard displays the document type. The database stores a salted hash of the number.
 2. Log out, then log in through the freelancer form with the same username and password.
-3. Generate a one-time hirer requirement ID in a second terminal.
+3. In Django Admin, open **Hirer access codes**, choose **Generate access code**, and confirm on the next page. Copy the code from the result page. You can also generate a code from PowerShell.
 
    ```powershell
    .\.venv\Scripts\python.exe manage.py issue_hirer_id
@@ -52,7 +52,7 @@ Enter your username, email address, and password at the prompts. Sign in at [Kaz
 
 - **Users** lists registered accounts by role. A superuser can change a role under **KaziLink profile**. Complete **Freelancer setup** when assigning Freelancer to an account without a profile. Assigning Hirer in the admin is direct approval by the superuser. People who register themselves as hirers still need a one-time code. Previous freelancer profiles and job posts are retained after a role change.
 - **Jobs** lets authorized staff add, view, update, and delete job posts. Search by title, hirer username, or location.
-- **Hirer access codes** shows when codes were issued and redeemed. Create codes using `manage.py issue_hirer_id`. The admin excludes document hashes and code digests.
+- **Hirer access codes** shows when codes were issued and redeemed. A superuser can generate codes here or use `manage.py issue_hirer_id`. The code is shown when generated and stored as a digest in the database.
 - **Groups** lets a superuser assign model permissions to staff. For example, create a **Job reviewers** group with **Can view job**, then assign it to an active user with **Staff status**. The user can view job records. Grant **Can change job** to also allow edits.
 
 For a fresh database, create **Freelancers** and **Hirers** in **Groups** and grant each group **Can view job** for marketplace jobs. To assign users in bulk, select only **Freelancers** and run **Add all freelancers to selected group**. Repeat with **Hirers** and **Add all hirers to selected group**. Run the actions again to include new accounts. Dashboard permissions work for regular accounts.

@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a> &rsaquo;
+    <a href="{% url 'admin:marketplace_hireraccesscode_changelist' %}">Hirer access codes</a> &rsaquo;
+    Generate a code
+  </div>
+{% endblock %}
+{% block content %}
+  {% if code %}
+    <p>Copy this code now and share it privately with the hirer. It will only be shown here and works for one successful signup.</p>
+    <p>
+      <label for="issued-code">Hirer access code</label>
+      <input id="issued-code" class="vTextField" type="text" value="{{ code }}" size="36" readonly>
+    </p>
+    <p><a href="{% url 'admin:marketplace_hireraccesscode_changelist' %}">Return to hirer access codes</a></p>
+  {% else %}
+    <p>Generate a one-time code for a new hirer. They enter it on the Hirer details step during signup.</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="submit-row"><input class="default" type="submit" value="Generate access code"></div>
+    </form>
+  {% endif %}
+{% endblock %}

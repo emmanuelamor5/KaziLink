@@ -1,3 +1,6 @@
+import re
+from hashlib import sha256
+
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import Group, Permission
 from django.test import TestCase
@@ -53,9 +56,32 @@ class AdminTests(TestCase):
         )
         self.assertContains(code_detail, "Issued at")
         self.assertNotContains(code_detail, "hidden-code-digest")
-        self.assertEqual(
-            self.client.get(reverse("admin:marketplace_hireraccesscode_add")).status_code, 403,
+
+    def test_superuser_can_issue_a_hirer_access_code(self):
+        url = reverse("admin:marketplace_hireraccesscode_add")
+        staff = User.objects.create_user(username="code-reviewer", is_staff=True)
+        staff.user_permissions.add(Permission.objects.get(
+            content_type__app_label="marketplace", codename="add_hireraccesscode",
+        ))
+        self.client.force_login(staff)
+        self.assertEqual(self.client.post(url).status_code, 403)
+
+        self.client.force_login(self.superuser)
+        self.assertContains(
+            self.client.get(reverse("admin:marketplace_hireraccesscode_changelist")),
+            "Generate access code",
         )
+        self.assertContains(self.client.get(url), "Generate access code")
+        self.assertFalse(HirerAccessCode.objects.exists())
+        response = self.client.post(url)
+        self.assertContains(response, "Hirer access code generated")
+        self.assertIn("no-store", response.headers["Cache-Control"])
+        code = re.search(r'value="([0-9A-F]{32})"', response.content.decode()).group(1)
+        record = HirerAccessCode.objects.get()
+        self.assertEqual(record.digest, sha256(code.encode()).hexdigest())
+        listing = self.client.get(reverse("admin:marketplace_hireraccesscode_changelist"))
+        self.assertNotContains(listing, code)
+        self.assertNotContains(listing, record.digest)
 
     def test_superuser_can_change_roles_and_reuse_freelancer_profile(self):
         self.client.force_login(self.superuser)

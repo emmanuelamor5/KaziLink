@@ -4,8 +4,12 @@ from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group
+from django.core.exceptions import PermissionDenied
+from django.db import transaction
+from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.http import require_http_methods
 
 from .forms import FreelancerDocumentNumberField
 from .models import FreelancerProfile, HirerAccessCode, Job, User
@@ -151,6 +155,7 @@ class JobAdmin(admin.ModelAdmin):
 
 @admin.register(HirerAccessCode)
 class HirerAccessCodeAdmin(admin.ModelAdmin):
+    change_list_template = "admin/marketplace/hireraccesscode/change_list.html"
     fields = ("id", "issued_at", "redeemed_at")
     readonly_fields = fields
     list_display = ("id", "issued_at", "redeemed_at")
@@ -158,7 +163,26 @@ class HirerAccessCodeAdmin(admin.ModelAdmin):
     ordering = ("-issued_at",)
 
     def has_add_permission(self, request):
-        return False
+        return request.user.is_superuser and super().has_add_permission(request)
+
+    @method_decorator(require_http_methods(["GET", "POST"]))
+    def add_view(self, request, form_url="", extra_context=None):
+        if not self.has_add_permission(request):
+            raise PermissionDenied
+
+        code = None
+        if request.method == "POST":
+            with transaction.atomic():
+                record, code = HirerAccessCode.issue()
+                self.log_addition(request, record, "Generated a hirer access code.")
+
+        request.current_app = self.admin_site.name
+        return TemplateResponse(request, "admin/marketplace/hireraccesscode/issue.html", {
+            **self.admin_site.each_context(request),
+            **(extra_context or {}),
+            "title": "Hirer access code generated" if code else "Generate a hirer access code",
+            "code": code,
+        })
 
     def has_change_permission(self, request, obj=None):
         return False

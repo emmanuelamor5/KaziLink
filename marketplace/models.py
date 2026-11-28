@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 from decimal import Decimal
 
 from django.conf import settings
@@ -34,6 +36,12 @@ class HirerAccessCode(models.Model):
     digest = models.CharField(max_length=64, unique=True, editable=False)
     issued_at = models.DateTimeField(auto_now_add=True)
     redeemed_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    @classmethod
+    def issue(cls):
+        code = secrets.token_hex(16).upper()
+        record = cls.objects.create(digest=hashlib.sha256(code.encode()).hexdigest())
+        return record, code
 
 
 class Job(models.Model):
